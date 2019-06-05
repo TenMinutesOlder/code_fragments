@@ -3,6 +3,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import random
 
 # df format n*[x_index, y_index, values]
 # ind_list = [x_name, y_name]
@@ -42,3 +43,30 @@ def barplot_3d(df, ind_list, val_col):
     colors = cm.rainbow(values)
     ax1.bar3d(xposM.ravel(), yposM.ravel(), dz * 0, dx, dy, dz, color=colors)
     plt.show()
+
+
+def plot_clusters(ts_array, y_pred, km, sample_size=1000):
+    # ts_array is an array in the shape (num_rec, ts_len, 1)
+    # y_pred is an 1D array of labels
+    # km is a fitted clustering class from tslearn.clustering
+    def get_proportion(y_pred):
+        df_y = pd.DataFrame(y_pred, columns=['y'])
+        df_p = df_y['y'].groupby(df_y['y']).count() / df_y.shape[0] * 100
+        return df_p
+
+    sample_list = random.sample(range(ts_array.shape[0]), sample_size)
+    ts_sample = ts_array[np.array(sample_list)]
+    y_sample = y_pred[np.array(sample_list)]
+    df_p = get_proportion(y_pred)
+    plt.figure()
+    for yi in range(6):
+        ax = plt.subplot(2, 3, yi + 1)
+        ax.set_title('cluster k=%d \n proportion = %.1f' % (yi, df_p[yi]))
+        for xx in ts_sample[y_sample == yi]:
+            plt.plot(xx.ravel(), "k-", alpha=.2, linewidth=0.9)
+        plt.plot(km.cluster_centers_[yi].ravel(), "r-", linewidth=2.5)
+        plt.xlim(0, 9)
+        plt.ylim(-4, 4)
+    plt.subplots_adjust(hspace=0.3)
+    plt.show()
+    return
